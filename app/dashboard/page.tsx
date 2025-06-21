@@ -5,12 +5,14 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useUser, useClerk } from '@clerk/nextjs';
 import Link from 'next/link';
+import AICoach from '../components/AICoach';
 
 interface UserData {
   name: string;
   passion: string;
   mainGoal: string;
   timeAvailable: string;
+  comfortLevel: string;
 }
 
 export default function Dashboard() {
@@ -79,7 +81,8 @@ export default function Dashboard() {
               name: data.user.full_name,
               passion: data.onboardingData?.passion || 'Not specified',
               mainGoal: data.onboardingData?.main_goal || 'Not specified',
-              timeAvailable: data.onboardingData?.time_available || 'Not specified'
+              timeAvailable: data.onboardingData?.time_available || 'Not specified',
+              comfortLevel: data.onboardingData?.comfort_level || 'Not specified'
             });
           }
         }
@@ -106,6 +109,14 @@ export default function Dashboard() {
   };
 
   const creatorTools = [
+    {
+      id: 'success-plan',
+      title: 'Success Plan',
+      description: 'Complete guide to content creation success',
+      icon: '📚',
+      color: 'from-green-500 to-emerald-600',
+      href: '/success-plan'
+    },
     {
       id: 'niche-finder',
       title: 'Niche Finder',
@@ -157,6 +168,11 @@ export default function Dashboard() {
   ];
 
   const quickActions = [
+    {
+      title: 'Success Plan',
+      description: 'Complete guide to content creation success',
+      action: () => router.push('/success-plan')
+    },
     {
       title: 'Generate a Script',
       description: 'Create content for your next video',
@@ -327,6 +343,9 @@ export default function Dashboard() {
           </div>
         </motion.div>
       </div>
+      
+      {/* AI Creator Coach */}
+      <AICoach userData={userData} />
     </div>
   );
 }
