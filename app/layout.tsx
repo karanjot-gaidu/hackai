@@ -4,7 +4,10 @@ import Script from "next/script";
 import localFont from "next/font/local";
 import { templateMetadata } from "./_template/content/metadata";
 
-export const metadata = templateMetadata;
+export const metadata = {
+  title: "LaunchCreator.ai - From Zero to Creator",
+  description: "Let AI guide you through content creation with step-by-step assistance",
+};
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -41,7 +44,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <ClerkProvider appearance={clerkAppearanceObject}>
-        <body className={`min-h-screen flex flex-col antialiased`}>
+        <body className={`min-h-screen flex flex-col antialiased bg-[#1A1A1A] text-white`}>
           {children}
         </body>
       </ClerkProvider>
