@@ -166,6 +166,14 @@ export default function Dashboard() {
       href: '/thumbnail-generator'
     },
     {
+      id: 'video-upload',
+      title: 'Video Upload & Subtitles',
+      description: 'Upload videos and generate automatic subtitles',
+      icon: '🎬',
+      color: 'from-cyan-500 to-blue-600',
+      href: '/video-upload'
+    },
+    {
       id: 'analytics',
       title: 'Content Analytics',
       description: 'Track your content performance',
