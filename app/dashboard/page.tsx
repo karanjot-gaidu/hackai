@@ -118,6 +118,14 @@ export default function Dashboard() {
       href: '/success-plan'
     },
     {
+      id: 'discover-hashtags',
+      title: 'Discover Hashtags',
+      description: 'Find trending TikTok hashtags with AI filtering',
+      icon: '🔥',
+      color: 'from-orange-500 to-red-600',
+      href: '/discover-hashtags'
+    },
+    {
       id: 'niche-finder',
       title: 'Niche Finder',
       description: 'Discover your perfect content niche',
@@ -164,7 +172,15 @@ export default function Dashboard() {
       icon: '📊',
       color: 'from-indigo-500 to-purple-600',
       href: '/tools/analytics'
-    }
+    },
+    {
+      id: 'trending-creators',
+      title: 'Trending Creators',
+      description: 'See the most popular TikTok creators right now',
+      icon: '🌟',
+      color: 'from-yellow-400 to-pink-500',
+      href: '/trending-creators'
+    },
   ];
 
   const quickActions = [
