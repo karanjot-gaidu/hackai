@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -20,7 +20,8 @@ interface ImageGeneration {
   created_at: string;
 }
 
-export default function ThumbnailGenerator() {
+// Separate component that uses useSearchParams
+function ThumbnailGeneratorContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [prompt, setPrompt] = useState('');
@@ -214,8 +215,28 @@ export default function ThumbnailGenerator() {
   };
 
   const addHashtagToPrompt = (hashtag: string) => {
-    setSelectedHashtag(hashtag);
-    setPrompt(prev => prev ? `${prev} ${hashtag}` : hashtag);
+    setPrompt(prev => prev + (prev.endsWith(' ') ? '' : ' ') + `#${hashtag}`);
+  };
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(enhancedPrompt);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+    }
+  };
+
+  const downloadImage = () => {
+    if (!generatedImage) return;
+    
+    const link = document.createElement('a');
+    link.href = generatedImage;
+    link.download = 'thumbnail.png';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -229,246 +250,210 @@ export default function ThumbnailGenerator() {
       />
 
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Left Column - Trending Hashtags */}
-          <div className="lg:col-span-1">
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6 }}
-              className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-6 rounded-2xl border border-gray-700/50"
-            >
-              <h3 className="text-xl font-bold text-white mb-4">🔥 Trending Hashtags</h3>
-              <div className="space-y-3">
-                {trendingHashtags.map((hashtag, index) => (
-                  <motion.div
-                    key={hashtag.hashtag}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                    className={`p-3 rounded-xl border cursor-pointer transition-all duration-300 ${
-                      selectedHashtag === hashtag.hashtag
-                        ? 'border-blue-500 bg-blue-500/10'
-                        : 'border-gray-700 hover:border-gray-600 bg-gray-800/30'
-                    }`}
-                    onClick={() => addHashtagToPrompt(hashtag.hashtag)}
-                  >
-                    <div className="flex justify-between items-center">
-                      <span className="text-white font-medium">{hashtag.hashtag}</span>
-                      <span className="text-gray-400 text-sm">{hashtag.views}</span>
-                    </div>
-                    <div className="text-gray-500 text-xs mt-1">{hashtag.category}</div>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Center Column - Chatbox and Generation */}
-          <div className="lg:col-span-2">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-6 rounded-2xl border border-gray-700/50 mb-6"
-            >
-              <h3 className="text-xl font-bold text-white mb-4">💬 Generate Thumbnail Ideas</h3>
-              
-              <div className="space-y-4">
-                {isAutoFilled && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-3 bg-gradient-to-r from-green-900/30 to-emerald-900/30 border border-green-700/50 rounded-xl"
-                  >
-                    <div className="flex items-center text-green-400 text-sm">
-                      <span className="mr-2">✅</span>
-                      Prompt auto-filled from your script generation
-                    </div>
-                  </motion.div>
-                )}
-                
-                <div>
-                  <label className="block text-gray-300 text-sm font-medium mb-2">
-                    Describe your content or thumbnail idea
-                  </label>
-                  <textarea
-                    value={prompt}
-                    onChange={(e) => {
-                      setPrompt(e.target.value);
-                      if (isAutoFilled) setIsAutoFilled(false);
-                    }}
-                    placeholder="e.g., A cooking tutorial for making pasta, A fitness challenge video, A comedy skit about dating..."
-                    className="w-full p-4 bg-gray-900/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none transition-colors"
-                    rows={4}
-                  />
-                </div>
-
-                {selectedHashtag && (
-                  <div className="flex items-center space-x-2">
-                    <span className="text-gray-400 text-sm">Selected hashtag:</span>
-                    <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm">
-                      {selectedHashtag}
-                    </span>
-                    <button
-                      onClick={() => setSelectedHashtag('')}
-                      className="text-gray-500 hover:text-gray-300"
-                    >
-                      ×
-                    </button>
-                  </div>
-                )}
-
-                <div className="flex space-x-3">
-                  <button
-                    onClick={generateImageDirectly}
-                    disabled={isGeneratingImage || !prompt.trim()}
-                    className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 px-6 rounded-xl font-medium hover:from-green-600 hover:to-emerald-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isGeneratingImage ? '🎨 Generating...' : '🎨 Generate Directly'}
-                  </button>
-                  
-                  <button
-                    onClick={generateThumbnailIdeas}
-                    disabled={isGenerating || !prompt.trim()}
-                    className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-6 rounded-xl font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isGenerating ? '🤖 Enhancing...' : '🤖 Enhance with AI'}
-                  </button>
-                </div>
-                
-                <div className="text-xs text-gray-500 text-center">
-                  <span className="text-green-400">🎨 Generate Directly:</span> Uses your prompt as-is for faster results
-                  <br />
-                  <span className="text-blue-400">🤖 Enhance with AI:</span> AI improves your prompt for better quality (recommended)
-                </div>
-              </div>
-
-              {/* Enhanced Prompt Display - Editable */}
-              {enhancedPrompt && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  className="mt-6 p-4 bg-gradient-to-r from-blue-900/20 to-purple-900/20 rounded-xl border border-blue-700/30"
-                >
-                  <h4 className="text-white font-medium mb-2 flex items-center">
-                    <span className="text-blue-400 mr-2">🤖</span>
-                    AI-Enhanced Prompt (Optional)
-                  </h4>
-                  <p className="text-gray-400 text-sm mb-3">
-                    The AI has enhanced your prompt for better results. You can edit it or use it as is.
-                  </p>
-                  <textarea
-                    value={enhancedPrompt}
-                    onChange={(e) => setEnhancedPrompt(e.target.value)}
-                    className="w-full p-4 bg-gray-900/30 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none transition-colors mb-4"
-                    rows={3}
-                    placeholder="Edit the enhanced prompt here..."
-                  />
-                  
-                  <button
-                    onClick={generateImage}
-                    disabled={isGeneratingImage || !enhancedPrompt.trim()}
-                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 px-6 rounded-xl font-medium hover:from-green-600 hover:to-emerald-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isGeneratingImage ? '🎨 Generating from Enhanced Prompt...' : '🎨 Generate from Enhanced Prompt'}
-                  </button>
-                </motion.div>
-              )}
-
-              {/* Generated Image Display */}
-              {generatedImage && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="mt-6"
-                >
-                  <h4 className="text-white font-medium mb-4">Generated Thumbnail:</h4>
-                  <div className="relative">
-                    <img
-                      src={generatedImage}
-                      alt="Generated thumbnail"
-                      className="w-full max-w-md rounded-xl border border-gray-700"
-                    />
-                    <a
-                      href={generatedImage}
-                      download
-                      className="absolute top-2 right-2 bg-black/50 text-white px-3 py-1 rounded-lg text-sm hover:bg-black/70 transition-colors"
-                    >
-                      Download
-                    </a>
-                  </div>
-                  
-                  {/* Video Upload Button */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="mt-6 p-4 bg-gradient-to-r from-cyan-900/20 to-blue-900/20 rounded-xl border border-cyan-700/30"
-                  >
-                    <h5 className="text-white font-medium mb-2 flex items-center">
-                      <span className="text-cyan-400 mr-2">🎬</span>
-                      Ready to create your video?
-                    </h5>
-                    <p className="text-gray-400 text-sm mb-4">
-                      Upload your video and generate automatic subtitles to make your content more accessible.
-                    </p>
-                    <Link
-                      href="/video-upload"
-                      className="inline-flex items-center bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-6 py-3 rounded-xl font-medium hover:from-cyan-600 hover:to-blue-700 transition-all duration-300"
-                    >
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                      </svg>
-                      Upload Video & Generate Subtitles
-                    </Link>
-                  </motion.div>
-                </motion.div>
-              )}
-            </motion.div>
-          </div>
-        </div>
-
-        {/* Image History */}
+        {/* Page Description */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="mt-8"
+          transition={{ duration: 0.6 }}
+          className="mb-8"
         >
-          <h3 className="text-xl font-bold text-white mb-6">📸 Recent Generations</h3>
-          {imageHistory.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {imageHistory.map((image, index) => (
-                <motion.div
-                  key={image.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-4 rounded-2xl border border-gray-700/50"
-                >
-                  <img
-                    src={image.image_url}
-                    alt={image.prompt}
-                    className="w-full h-48 object-cover rounded-xl mb-3"
-                  />
-                  <p className="text-gray-300 text-sm mb-2 line-clamp-2">{image.prompt}</p>
-                  <div className="flex justify-between items-center text-xs text-gray-500">
-                    <span>{new Date(image.created_at).toLocaleDateString()}</span>
-                    <span>{image.generation_time_seconds?.toFixed(1)}s</span>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl border border-gray-700/50">
-              <div className="text-4xl mb-4">🎨</div>
-              <h4 className="text-lg font-semibold text-white mb-2">No images generated yet</h4>
-              <p className="text-gray-400">Start by generating some thumbnail ideas above!</p>
-            </div>
-          )}
+          <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-6 rounded-2xl border border-gray-700/50">
+            <h2 className="text-xl font-bold text-white mb-4">🎨 Generate Eye-Catching Thumbnails</h2>
+            <p className="text-gray-400">
+              Create compelling thumbnails that will make your content stand out. 
+              Use AI to enhance your prompts and generate stunning visuals.
+            </p>
+          </div>
         </motion.div>
+
+        {/* Main Content */}
+        <div className="grid lg:grid-cols-2 gap-8">
+          {/* Left Column - Input and Generation */}
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="space-y-6"
+          >
+            {/* Prompt Input */}
+            <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-6 rounded-2xl border border-gray-700/50">
+              <h3 className="text-lg font-semibold text-white mb-4">📝 Describe Your Thumbnail</h3>
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="e.g., A vibrant cooking video thumbnail with fresh ingredients, A fitness motivation scene with energetic colors..."
+                className="w-full bg-gray-700/50 border border-gray-600 rounded-xl p-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                rows={4}
+              />
+              
+              {/* Trending Hashtags */}
+              <div className="mt-4">
+                <h4 className="text-sm font-medium text-gray-300 mb-2">Trending Hashtags:</h4>
+                <div className="flex flex-wrap gap-2">
+                  {trendingHashtags.map((tag) => (
+                    <button
+                      key={tag.hashtag}
+                      onClick={() => addHashtagToPrompt(tag.hashtag)}
+                      className="px-3 py-1 bg-blue-500/20 text-blue-300 rounded-lg text-sm hover:bg-blue-500/30 transition-colors"
+                    >
+                      #{tag.hashtag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Generation Mode Toggle */}
+            <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-6 rounded-2xl border border-gray-700/50">
+              <h3 className="text-lg font-semibold text-white mb-4">⚙️ Generation Mode</h3>
+              <div className="flex space-x-4">
+                <button
+                  onClick={() => setGenerationMode('enhance')}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    generationMode === 'enhance'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  Enhance Prompt
+                </button>
+                <button
+                  onClick={() => setGenerationMode('direct')}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    generationMode === 'direct'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  Generate Directly
+                </button>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex space-x-4">
+              {generationMode === 'enhance' ? (
+                <button
+                  onClick={generateThumbnailIdeas}
+                  disabled={isGenerating || !prompt.trim()}
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isGenerating ? 'Enhancing...' : 'Enhance Prompt'}
+                </button>
+              ) : (
+                <button
+                  onClick={generateImageDirectly}
+                  disabled={isGeneratingImage || !prompt.trim()}
+                  className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isGeneratingImage ? 'Generating...' : 'Generate Image'}
+                </button>
+              )}
+            </div>
+
+            {/* Enhanced Prompt Display */}
+            {showEnhancedPrompt && enhancedPrompt && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="bg-gradient-to-br from-green-900/20 to-emerald-900/20 p-6 rounded-2xl border border-green-700/30"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white">✨ Enhanced Prompt</h3>
+                  <button
+                    onClick={copyToClipboard}
+                    className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-700 transition-colors"
+                  >
+                    {copySuccess ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+                <p className="text-green-100 text-sm leading-relaxed mb-4">{enhancedPrompt}</p>
+                <button
+                  onClick={generateImage}
+                  disabled={isGeneratingImage}
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isGeneratingImage ? 'Generating Image...' : 'Generate Image from Enhanced Prompt'}
+                </button>
+              </motion.div>
+            )}
+          </motion.div>
+
+          {/* Right Column - Generated Image and History */}
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="space-y-6"
+          >
+            {/* Generated Image */}
+            {generatedImage && (
+              <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-6 rounded-2xl border border-gray-700/50">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white">🎨 Generated Thumbnail</h3>
+                  <button
+                    onClick={downloadImage}
+                    className="bg-green-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-green-700 transition-colors"
+                  >
+                    Download
+                  </button>
+                </div>
+                <div className="relative">
+                  <img
+                    src={generatedImage}
+                    alt="Generated thumbnail"
+                    className="w-full rounded-xl shadow-lg"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Image History */}
+            <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-6 rounded-2xl border border-gray-700/50">
+              <h3 className="text-lg font-semibold text-white mb-4">📸 Recent Generations</h3>
+              {imageHistory.length > 0 ? (
+                <div className="grid grid-cols-2 gap-4 max-h-96 overflow-y-auto">
+                  {imageHistory.map((image) => (
+                    <div key={image.id} className="relative group">
+                      <img
+                        src={image.image_url}
+                        alt={image.prompt}
+                        className="w-full h-24 object-cover rounded-lg"
+                      />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                        <button
+                          onClick={() => setGeneratedImage(image.image_url)}
+                          className="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700 transition-colors"
+                        >
+                          Use This
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-400 text-center py-8">No recent generations yet. Create your first thumbnail!</p>
+              )}
+            </div>
+          </motion.div>
+        </div>
       </div>
     </div>
+  );
+}
+
+// Main component with Suspense boundary
+export default function ThumbnailGenerator() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-[#1A1A1A] via-[#2A2A2A] to-[#1A1A1A] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading thumbnail generator...</p>
+        </div>
+      </div>
+    }>
+      <ThumbnailGeneratorContent />
+    </Suspense>
   );
 } 
