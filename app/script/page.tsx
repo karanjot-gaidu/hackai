@@ -53,7 +53,13 @@ export default function ScriptPage() {
     const dataParam = urlParams.get('data');
     if (dataParam) {
       try {
-        const data = JSON.parse(decodeURIComponent(dataParam));
+        // First decode the URI component
+        const decodedData = decodeURIComponent(dataParam);
+        
+        // Then parse the JSON
+        const data = JSON.parse(decodedData);
+        
+        // Safely set the data with fallbacks
         setScript(data.script || '');
         setThumbnailPrompt(data.prompt || '');
         console.log('Thumbnail prompt:', data.prompt);
@@ -63,6 +69,31 @@ export default function ScriptPage() {
         hasProcessedIncomingData.current = true;
       } catch (error) {
         console.error('Error parsing data parameter:', error);
+        console.error('Raw data param:', dataParam);
+        
+        // Try to extract basic info from the malformed data
+        try {
+          // If JSON parsing fails, try to extract hashtag from the URL
+          const hashtagMatch = dataParam.match(/hashtag["\s]*:["\s]*"([^"]+)"/);
+          if (hashtagMatch) {
+            setHashtag(hashtagMatch[1]);
+          }
+          
+          // Try to extract content idea
+          const ideaMatch = dataParam.match(/contentIdea["\s]*:["\s]*"([^"]+)"/);
+          if (ideaMatch) {
+            setContentIdea(ideaMatch[1]);
+          }
+          
+          // Try to extract user passion
+          const passionMatch = dataParam.match(/userPassion["\s]*:["\s]*"([^"]+)"/);
+          if (passionMatch) {
+            setUserPassion(passionMatch[1]);
+          }
+        } catch (fallbackError) {
+          console.error('Fallback parsing also failed:', fallbackError);
+        }
+        
         hasProcessedIncomingData.current = true;
       }
     } else {

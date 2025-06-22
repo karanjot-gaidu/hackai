@@ -152,41 +152,69 @@ export default function DiscoverHashtags() {
       if (response.ok) {
         const data = await response.json();
         
-        // Navigate to script generator page with the generated script and thumbnail prompt
-        const scriptData = encodeURIComponent(JSON.stringify({
-          script: data.script,
-          prompt: data.prompt,
+        // Clean and sanitize the data before encoding
+        const scriptData = {
+          script: data.script || '',
+          prompt: data.prompt || '',
           contentIdea: `${contentIdea.title}: ${contentIdea.description}`,
-          hashtag: selectedHashtag,
-          userPassion
-        }));
+          hashtag: selectedHashtag || '',
+          userPassion: userPassion || ''
+        };
         
-        router.push(`/script?data=${scriptData}`);
+        // Safely encode the data with proper error handling
+        try {
+          const encodedData = encodeURIComponent(JSON.stringify(scriptData));
+          
+          // Validate the encoded data isn't too long (URL length limits)
+          if (encodedData.length > 8000) {
+            // If too long, truncate the script and prompt
+            const truncatedData = {
+              ...scriptData,
+              script: scriptData.script.substring(0, 2000) + '...',
+              prompt: scriptData.prompt.substring(0, 1000) + '...'
+            };
+            const truncatedEncoded = encodeURIComponent(JSON.stringify(truncatedData));
+            router.push(`/script?data=${truncatedEncoded}`);
+          } else {
+            router.push(`/script?data=${encodedData}`);
+          }
+        } catch (encodingError) {
+          console.error('Error encoding data:', encodingError);
+          // Fallback: pass minimal data
+          const fallbackData = encodeURIComponent(JSON.stringify({
+            script: '',
+            prompt: '',
+            contentIdea: contentIdea.title,
+            hashtag: selectedHashtag || '',
+            userPassion: userPassion || ''
+          }));
+          router.push(`/script?data=${fallbackData}`);
+        }
       } else {
         console.error('Failed to generate script');
         // Fallback: navigate to script generator with just the content idea
-        const scriptData = encodeURIComponent(JSON.stringify({
+        const fallbackData = encodeURIComponent(JSON.stringify({
           script: '',
           prompt: '',
-          contentIdea: `${contentIdea.title}: ${contentIdea.description}`,
-          hashtag: selectedHashtag,
-          userPassion
+          contentIdea: contentIdea.title,
+          hashtag: selectedHashtag || '',
+          userPassion: userPassion || ''
         }));
         
-        router.push(`/script?data=${scriptData}`);
+        router.push(`/script?data=${fallbackData}`);
       }
     } catch (error) {
       console.error('Error generating script:', error);
       // Fallback: navigate to script generator with just the content idea
-      const scriptData = encodeURIComponent(JSON.stringify({
+      const fallbackData = encodeURIComponent(JSON.stringify({
         script: '',
         prompt: '',
-        contentIdea: `${contentIdea.title}: ${contentIdea.description}`,
-        hashtag: selectedHashtag,
-        userPassion
+        contentIdea: contentIdea.title,
+        hashtag: selectedHashtag || '',
+        userPassion: userPassion || ''
       }));
       
-      router.push(`/script?data=${scriptData}`);
+      router.push(`/script?data=${fallbackData}`);
     } finally {
       setIsGeneratingScript(false);
     }
