@@ -51,6 +51,20 @@ CREATE TABLE content_history (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Image generation history table
+CREATE TABLE image_generations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id VARCHAR(255) REFERENCES users(clerk_id) ON DELETE CASCADE,
+    prompt TEXT NOT NULL,
+    image_url TEXT NOT NULL,
+    image_path TEXT NOT NULL, -- Path in Supabase storage
+    generation_time_seconds DECIMAL(10,2),
+    model_used VARCHAR(100) DEFAULT 'stable-diffusion-3.5-large',
+    status VARCHAR(50) DEFAULT 'completed',
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Create indexes for better performance
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_username ON users(username);
@@ -58,6 +72,8 @@ CREATE INDEX idx_onboarding_user_id ON onboarding_data(user_id);
 CREATE INDEX idx_onboarding_embedding ON onboarding_data USING ivfflat (passion_embedding vector_cosine_ops);
 CREATE INDEX idx_preferences_user_id ON user_preferences(user_id);
 CREATE INDEX idx_content_history_user_id ON content_history(user_id);
+CREATE INDEX idx_image_generations_user_id ON image_generations(user_id);
+CREATE INDEX idx_image_generations_created_at ON image_generations(created_at DESC);
 
 -- Create updated_at trigger function
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -83,6 +99,7 @@ ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE onboarding_data ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_preferences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE content_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE image_generations ENABLE ROW LEVEL SECURITY;
 
 -- Users can only access their own data
 CREATE POLICY "Users can view own profile" ON users
@@ -98,6 +115,9 @@ CREATE POLICY "Users can view own preferences" ON user_preferences
     FOR ALL USING (user_id = current_setting('app.current_user_id', true));
 
 CREATE POLICY "Users can view own content history" ON content_history
+    FOR ALL USING (user_id = current_setting('app.current_user_id', true));
+
+CREATE POLICY "Users can view own image generations" ON image_generations
     FOR ALL USING (user_id = current_setting('app.current_user_id', true));
 
 -- Function to create user profile after Clerk signup
@@ -162,5 +182,68 @@ BEGIN
     WHERE clerk_id = p_user_id;
     
     RETURN onboarding_uuid;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to store image generation
+CREATE OR REPLACE FUNCTION store_image_generation(
+    p_user_id VARCHAR(255),
+    p_prompt TEXT,
+    p_image_url TEXT,
+    p_image_path TEXT,
+    p_generation_time_seconds DECIMAL(10,2) DEFAULT NULL,
+    p_model_used VARCHAR(100) DEFAULT 'stable-diffusion-3.5-large',
+    p_metadata JSONB DEFAULT '{}'
+)
+RETURNS UUID AS $$
+DECLARE
+    generation_uuid UUID;
+BEGIN
+    INSERT INTO image_generations (
+        user_id, prompt, image_url, image_path, 
+        generation_time_seconds, model_used, metadata
+    )
+    VALUES (
+        p_user_id, p_prompt, p_image_url, p_image_path,
+        p_generation_time_seconds, p_model_used, p_metadata
+    )
+    RETURNING id INTO generation_uuid;
+    
+    RETURN generation_uuid;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to get image generation history for a user
+CREATE OR REPLACE FUNCTION get_image_history(
+    p_user_id VARCHAR(255),
+    p_limit INTEGER DEFAULT 50,
+    p_offset INTEGER DEFAULT 0
+)
+RETURNS TABLE (
+    id UUID,
+    prompt TEXT,
+    image_url TEXT,
+    image_path TEXT,
+    generation_time_seconds DECIMAL(10,2),
+    model_used VARCHAR(100),
+    status VARCHAR(50),
+    created_at TIMESTAMP WITH TIME ZONE
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        ig.id,
+        ig.prompt,
+        ig.image_url,
+        ig.image_path,
+        ig.generation_time_seconds,
+        ig.model_used,
+        ig.status,
+        ig.created_at
+    FROM image_generations ig
+    WHERE ig.user_id = p_user_id
+    ORDER BY ig.created_at DESC
+    LIMIT p_limit
+    OFFSET p_offset;
 END;
 $$ LANGUAGE plpgsql; 

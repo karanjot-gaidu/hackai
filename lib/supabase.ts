@@ -49,4 +49,17 @@ export interface ContentHistory {
   content_type: string;
   content_data: any;
   created_at: string;
+}
+
+export interface ImageGeneration {
+  id: string;
+  user_id: string;
+  prompt: string;
+  image_url: string;
+  image_path: string;
+  generation_time_seconds: number | null;
+  model_used: string;
+  status: string;
+  metadata: any;
+  created_at: string;
 } 

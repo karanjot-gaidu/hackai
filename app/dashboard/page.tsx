@@ -159,11 +159,11 @@ export default function Dashboard() {
     },
     {
       id: 'thumbnail-designer',
-      title: 'Thumbnail Ideas',
-      description: 'Get thumbnail design suggestions',
+      title: 'Thumbnail Ideas + Generation',
+      description: 'Get thumbnail ideas and generate images for your content',
       icon: '🎨',
       color: 'from-pink-500 to-purple-600',
-      href: '/tools/thumbnail-designer'
+      href: '/thumbnail-generator'
     },
     {
       id: 'analytics',
