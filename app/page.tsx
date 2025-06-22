@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Home() {
   return (
@@ -13,9 +14,18 @@ export default function Home() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
-            className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent"
+            className="flex items-center space-x-3"
           >
-            LaunchCreator.ai
+            <Image 
+              src="/logo.png" 
+              alt="CreatorStudio Logo" 
+              width={32}
+              height={32}
+              className="w-8 h-8"
+            />
+            <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
+              CreatorStudio
+            </span>
           </motion.div>
           <motion.div
             initial={{ opacity: 0, x: 20 }}
@@ -24,7 +34,7 @@ export default function Home() {
             className="flex items-center space-x-4"
           >
             <Link
-              href="/signin"
+              href="/sign-in"
               className="px-4 py-2 text-gray-300 hover:text-white transition-colors duration-300"
             >
               Sign In

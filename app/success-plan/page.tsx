@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
+import DashboardNavbar from '../components/DashboardNavbar';
 
 export default function SuccessPlan() {
   const { user } = useUser();
@@ -291,28 +292,15 @@ export default function SuccessPlan() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-gray-900/80 to-gray-800/80 backdrop-blur-md border-b border-gray-700/50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link href="/dashboard" className="text-gray-300 hover:text-white transition-colors">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </Link>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
-                Your Success Plan
-              </h1>
-            </div>
-            <div className="text-gray-300">
-              Welcome, {user?.firstName || 'Creator'}! 🌟
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Navigation */}
+      <DashboardNavbar 
+        title="Your Success Plan"
+        showBackButton={true}
+        showUserInfo={true}
+        showSignOut={true}
+      />
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Hero Section */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}

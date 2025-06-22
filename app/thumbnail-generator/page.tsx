@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import DashboardNavbar from '../components/DashboardNavbar';
 
 interface TrendingHashtag {
   hashtag: string;
@@ -219,21 +220,13 @@ export default function ThumbnailGenerator() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1A1A1A] via-[#2A2A2A] to-[#1A1A1A]">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-gray-900/80 to-gray-800/80 backdrop-blur-md border-b border-gray-700/50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link href="/dashboard" className="text-gray-400 hover:text-white transition-colors">
-                ← Back to Dashboard
-              </Link>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
-                Thumbnail Ideas + Generation
-              </h1>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Navigation */}
+      <DashboardNavbar 
+        title="Thumbnail Ideas + Generation"
+        showBackButton={true}
+        showUserInfo={false}
+        showSignOut={false}
+      />
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid lg:grid-cols-3 gap-8">

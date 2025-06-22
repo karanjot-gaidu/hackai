@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import TrendingVideos from '../components/trending-videos';
+import DashboardNavbar from '../components/DashboardNavbar';
 
 interface TrendingVideo {
   video_id: string;
@@ -291,21 +293,13 @@ export default function VideoUpload() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1A1A1A] via-[#2A2A2A] to-[#1A1A1A]">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-gray-900/80 to-gray-800/80 backdrop-blur-md border-b border-gray-700/50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link href="/dashboard" className="text-gray-400 hover:text-white transition-colors">
-                ← Back to Dashboard
-              </Link>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
-                Video Upload & Subtitle Generation
-              </h1>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Navigation */}
+      <DashboardNavbar 
+        title="Video Upload & Subtitle Generation"
+        showBackButton={true}
+        showUserInfo={false}
+        showSignOut={false}
+      />
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Video Upload Section */}
@@ -666,89 +660,10 @@ export default function VideoUpload() {
         </motion.div>
 
         {/* Trending Videos Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-        >
-          <h2 className="text-2xl font-bold text-white mb-6">🔥 Trending TikTok Videos</h2>
-          
-          {isLoadingVideos ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-              <p className="text-gray-400">Loading trending videos...</p>
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {trendingVideos.slice(0, 9).map((video, index) => (
-                <motion.div
-                  key={video.video_id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl border border-gray-700/50 overflow-hidden hover:border-gray-600 transition-all duration-300"
-                >
-                  {/* Video Thumbnail */}
-                  <div className="relative">
-                    <img
-                      src={video.thumbnail}
-                      alt={video.title}
-                      className="w-full h-48 object-cover"
-                    />
-                    <div className="absolute bottom-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
-                      {formatDuration(video.duration_in_sec)}
-                    </div>
-                    <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-medium">
-                      🔥 Trending
-                    </div>
-                  </div>
-
-                  {/* Video Info */}
-                  <div className="p-4">
-                    <h3 className="text-white font-semibold mb-2 line-clamp-2 text-sm">
-                      {video.title}
-                    </h3>
-                    
-                    {/* Author Info */}
-                    <div className="flex items-center mb-3">
-                      <img
-                        src={video.author.profile_picture_url}
-                        alt={video.author.name}
-                        className="w-6 h-6 rounded-full mr-2"
-                      />
-                      <span className="text-gray-400 text-xs">@{video.author.uniqueId}</span>
-                      {video.author.verifiedAccount && (
-                        <svg className="w-4 h-4 text-blue-400 ml-1" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
-                      )}
-                    </div>
-
-                    {/* Stats */}
-                    <div className="flex items-center justify-between text-xs text-gray-500">
-                      <div className="flex items-center space-x-3">
-                        <span>👁️ {formatNumber(video.stats.playCount)}</span>
-                        <span>❤️ {formatNumber(video.stats.diggCount)}</span>
-                        <span>💬 {formatNumber(video.stats.commentCount)}</span>
-                      </div>
-                      <span>📤 {formatNumber(video.stats.shareCount)}</span>
-                    </div>
-
-                    {/* View on TikTok Button */}
-                    <a
-                      href={video.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-3 w-full bg-gradient-to-r from-pink-500 to-red-500 text-white py-2 px-4 rounded-lg text-sm font-medium hover:from-pink-600 hover:to-red-600 transition-all duration-300 text-center block"
-                    >
-                      View on TikTok
-                    </a>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </motion.div>
+        <TrendingVideos 
+          trendingVideos={trendingVideos} 
+          isLoadingVideos={isLoadingVideos} 
+        />
       </div>
     </div>
   );

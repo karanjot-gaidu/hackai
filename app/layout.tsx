@@ -3,10 +3,12 @@ import "./globals.css";
 import Script from "next/script";
 import localFont from "next/font/local";
 import { templateMetadata } from "./_template/content/metadata";
+import { UserProvider } from "./contexts/UserContext";
+import GlobalAICoach from "./components/GlobalAICoach";
 
 export const metadata = {
-  title: "LaunchCreator.ai - From Zero to Creator",
-  description: "Let AI guide you through content creation with step-by-step assistance",
+  title: "CreatorStudio",
+  description: "From Zero to Creator - Let AI guide you through content creation with step-by-step assistance",
 };
 
 const geistSans = localFont({
@@ -44,9 +46,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <ClerkProvider appearance={clerkAppearanceObject}>
-        <body className={`min-h-screen flex flex-col antialiased bg-[#1A1A1A] text-white`}>
-          {children}
-        </body>
+        <UserProvider>
+          <body className={`min-h-screen flex flex-col antialiased bg-[#1A1A1A] text-white`}>
+            {children}
+            <GlobalAICoach />
+          </body>
+        </UserProvider>
       </ClerkProvider>
 
       <Script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-core.min.js" />

@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Button from '../../components/Button';
+import DashboardNavbar from '../../components/DashboardNavbar';
 
 interface NicheSuggestion {
   id: string;
@@ -219,19 +220,13 @@ export default function NicheFinder() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1A1A1A] via-[#2A2A2A] to-[#1A1A1A]">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-gray-900/80 to-gray-800/80 backdrop-blur-md border-b border-gray-700/50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/dashboard" className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
-              LaunchCreator.ai
-            </Link>
-            <Link href="/dashboard" className="text-gray-300 hover:text-white transition-colors">
-              ← Back to Dashboard
-            </Link>
-          </div>
-        </div>
-      </header>
+      {/* Navigation */}
+      <DashboardNavbar 
+        title="Find Your Perfect Niche"
+        showBackButton={true}
+        showUserInfo={false}
+        showSignOut={false}
+      />
 
       <div className="max-w-6xl mx-auto px-6 py-12">
         <motion.div

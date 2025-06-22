@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useUser, useClerk } from '@clerk/nextjs';
 import Link from 'next/link';
-import AICoach from '../components/AICoach';
+import DashboardNavbar from '../components/DashboardNavbar';
 
 interface UserData {
   name: string;
@@ -110,14 +110,6 @@ export default function Dashboard() {
 
   const creatorTools = [
     {
-      id: 'success-plan',
-      title: 'Success Plan',
-      description: 'Complete guide to content creation success',
-      icon: '📚',
-      color: 'from-green-500 to-emerald-600',
-      href: '/success-plan'
-    },
-    {
       id: 'discover-hashtags',
       title: 'Discover Hashtags',
       description: 'Find trending TikTok hashtags with AI filtering',
@@ -126,36 +118,12 @@ export default function Dashboard() {
       href: '/discover-hashtags'
     },
     {
-      id: 'niche-finder',
-      title: 'Niche Finder',
-      description: 'Discover your perfect content niche',
-      icon: '🎯',
-      color: 'from-blue-500 to-purple-600',
-      href: '/tools/niche-finder'
-    },
-    {
       id: 'script-generator',
       title: 'Script Generator',
       description: 'Create engaging scripts with AI',
       icon: '📝',
       color: 'from-purple-500 to-pink-600',
       href: '/script'
-    },
-    {
-      id: 'content-planner',
-      title: 'Content Planner',
-      description: 'Plan your content calendar',
-      icon: '📅',
-      color: 'from-green-500 to-blue-600',
-      href: '/tools/content-planner'
-    },
-    {
-      id: 'caption-writer',
-      title: 'Caption Writer',
-      description: 'Write compelling social media captions',
-      icon: '💬',
-      color: 'from-orange-500 to-red-600',
-      href: '/tools/caption-writer'
     },
     {
       id: 'thumbnail-designer',
@@ -174,14 +142,6 @@ export default function Dashboard() {
       href: '/video-upload'
     },
     {
-      id: 'analytics',
-      title: 'Content Analytics',
-      description: 'Track your content performance',
-      icon: '📊',
-      color: 'from-indigo-500 to-purple-600',
-      href: '/tools/analytics'
-    },
-    {
       id: 'trending-creators',
       title: 'Trending Creators',
       description: 'See the most popular TikTok creators right now',
@@ -189,29 +149,42 @@ export default function Dashboard() {
       color: 'from-yellow-400 to-pink-500',
       href: '/trending-creators'
     },
+    {
+      id: 'analytics',
+      title: 'Content Analytics',
+      description: 'Track your content performance',
+      icon: '📊',
+      color: 'from-gray-500 to-gray-600',
+      href: '#',
+      disabled: true
+    },
   ];
 
-  const quickActions = [
+  const trendingOptions = [
     {
-      title: 'Success Plan',
-      description: 'Complete guide to content creation success',
-      action: () => router.push('/success-plan')
+      id: 'trending-hashtags',
+      title: 'Trending Hashtags',
+      description: 'Discover the hottest hashtags on TikTok',
+      icon: '🔥',
+      color: 'from-orange-500 to-red-600',
+      href: '/discover-hashtags'
     },
     {
-      title: 'Generate a Script',
-      description: 'Create content for your next video',
-      action: () => router.push('/tools/script-generator')
+      id: 'trending-creators',
+      title: 'Trending Creators',
+      description: 'See the most popular TikTok creators',
+      icon: '🌟',
+      color: 'from-yellow-400 to-pink-500',
+      href: '/trending-creators'
     },
     {
-      title: 'Find Your Niche',
-      description: 'Discover what content to create',
-      action: () => router.push('/tools/niche-finder')
+      id: 'trending-videos',
+      title: 'Trending Videos',
+      description: 'Watch the latest viral TikTok videos',
+      icon: '📹',
+      color: 'from-purple-500 to-pink-600',
+      href: '/trending-videos'
     },
-    {
-      title: 'Write Captions',
-      description: 'Create engaging social media posts',
-      action: () => router.push('/tools/caption-writer')
-    }
   ];
 
   if (!isLoaded || isLoading) {
@@ -242,27 +215,8 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1A1A1A] via-[#2A2A2A] to-[#1A1A1A]">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-gray-900/80 to-gray-800/80 backdrop-blur-md border-b border-gray-700/50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
-                LaunchCreator.ai
-              </h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-gray-300">Welcome, {user.firstName || userData.name}!</span>
-              <button
-                onClick={() => signOut()}
-                className="px-4 py-2 text-gray-300 hover:text-white transition-colors"
-              >
-                Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Navigation */}
+      <DashboardNavbar />
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Welcome Section */}
@@ -293,32 +247,73 @@ export default function Dashboard() {
           </div>
         </motion.div>
 
-        {/* Quick Actions */}
+        {/* Success Plan Section - Standalone Highlighted */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.1 }}
+          className="mb-12"
+        >
+          <Link href="/success-plan">
+            <div className="bg-gradient-to-br from-green-500/20 to-emerald-600/20 p-8 rounded-2xl border-2 border-green-500/50 hover:border-green-400/70 transition-all duration-300 group cursor-pointer">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-6">
+                  <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform duration-300 mr-4">
+                    📚
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-green-400 transition-colors">
+                      Success Plan
+                    </h3>
+                    <p className="text-gray-300 text-lg">
+                      Complete guide to content creation success - Your roadmap to becoming a top creator
+                    </p>
+                  </div>
+                </div>
+                <div className="text-green-400 group-hover:text-green-300 transition-colors">
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </Link>
+        </motion.div>
+
+        {/* Trending TikTok Section */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
           className="mb-12"
         >
-          <h3 className="text-xl font-bold text-white mb-6">Quick Actions</h3>
-          <div className="grid md:grid-cols-3 gap-4">
-            {quickActions.map((action, index) => (
+          <h3 className="text-xl font-bold text-white mb-6">🔥 See what's trending on TikTok</h3>
+          <div className="grid md:grid-cols-3 gap-6">
+            {trendingOptions.map((option, index) => (
               <motion.div
-                key={action.title}
+                key={option.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 + index * 0.1 }}
-                className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-6 rounded-2xl border border-gray-700/50 cursor-pointer hover:border-blue-500/50 transition-all duration-300"
-                onClick={action.action}
+                className="group"
               >
-                <h4 className="font-semibold text-white mb-2">{action.title}</h4>
-                <p className="text-gray-400 text-sm">{action.description}</p>
+                <Link href={option.href}>
+                  <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-6 rounded-2xl border border-gray-700/50 hover:border-blue-500/50 transition-all duration-300 h-full">
+                    <div className={`w-12 h-12 bg-gradient-to-r ${option.color} rounded-xl flex items-center justify-center mb-4 text-2xl`}>
+                      {option.icon}
+                    </div>
+                    <h4 className="font-semibold text-white mb-2 group-hover:text-blue-400 transition-colors">
+                      {option.title}
+                    </h4>
+                    <p className="text-gray-400 text-sm">{option.description}</p>
+                  </div>
+                </Link>
               </motion.div>
             ))}
           </div>
         </motion.div>
 
-        {/* Creator Tools */}
+        {/* Creator Tools Section */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -334,17 +329,34 @@ export default function Dashboard() {
                 transition={{ duration: 0.5, delay: 0.5 + index * 0.1 }}
                 className="group"
               >
-                <Link href={tool.href}>
-                  <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-6 rounded-2xl border border-gray-700/50 hover:border-blue-500/50 transition-all duration-300 h-full">
+                {tool.disabled ? (
+                  <div className="bg-gradient-to-br from-gray-700/50 to-gray-800/50 p-6 rounded-2xl border border-gray-600/50 opacity-60 cursor-not-allowed">
                     <div className={`w-12 h-12 bg-gradient-to-r ${tool.color} rounded-xl flex items-center justify-center mb-4 text-2xl`}>
                       {tool.icon}
                     </div>
-                    <h4 className="font-semibold text-white mb-2 group-hover:text-blue-400 transition-colors">
-                      {tool.title}
-                    </h4>
-                    <p className="text-gray-400 text-sm">{tool.description}</p>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-semibold text-gray-400">
+                        {tool.title}
+                      </h4>
+                      <span className="bg-gray-600 text-gray-300 px-2 py-1 rounded text-xs">
+                        Coming Soon
+                      </span>
+                    </div>
+                    <p className="text-gray-500 text-sm">{tool.description}</p>
                   </div>
-                </Link>
+                ) : (
+                  <Link href={tool.href}>
+                    <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-6 rounded-2xl border border-gray-700/50 hover:border-blue-500/50 transition-all duration-300 h-full">
+                      <div className={`w-12 h-12 bg-gradient-to-r ${tool.color} rounded-xl flex items-center justify-center mb-4 text-2xl`}>
+                        {tool.icon}
+                      </div>
+                      <h4 className="font-semibold text-white mb-2 group-hover:text-blue-400 transition-colors">
+                        {tool.title}
+                      </h4>
+                      <p className="text-gray-400 text-sm">{tool.description}</p>
+                    </div>
+                  </Link>
+                )}
               </motion.div>
             ))}
           </div>
@@ -367,9 +379,8 @@ export default function Dashboard() {
           </div>
         </motion.div>
       </div>
-      
-      {/* AI Creator Coach */}
-      <AICoach userData={userData} />
     </div>
   );
 }
+
+
