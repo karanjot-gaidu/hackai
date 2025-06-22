@@ -1,5 +1,0 @@
-"import { NextRequest, NextResponse } from 'next/server';" 
-"import { ZapCap } from 'zapcap';" 
-"" 
-"export async function POST(request: NextRequest) {" 
-"  try {" 
