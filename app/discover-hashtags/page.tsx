@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface Hashtag {
   hashtag_name: string;
@@ -27,6 +28,7 @@ interface ContentIdea {
 
 export default function DiscoverHashtags() {
   const { user } = useUser();
+  const router = useRouter();
   const [hashtags, setHashtags] = useState<Hashtag[]>([]);
   const [filteredHashtags, setFilteredHashtags] = useState<Hashtag[]>([]);
   const [userPassion, setUserPassion] = useState<string>('');
@@ -35,6 +37,7 @@ export default function DiscoverHashtags() {
   const [selectedHashtag, setSelectedHashtag] = useState<string | null>(null);
   const [contentIdeas, setContentIdeas] = useState<ContentIdea[]>([]);
   const [isGeneratingIdeas, setIsGeneratingIdeas] = useState(false);
+  const [isGeneratingScript, setIsGeneratingScript] = useState(false);
   const [filterMode, setFilterMode] = useState<'all' | 'relevant' | 'trending'>('all');
   const [trendingContext, setTrendingContext] = useState<string>('');
 
@@ -128,6 +131,60 @@ export default function DiscoverHashtags() {
       setTrendingContext('');
     } finally {
       setIsGeneratingIdeas(false);
+    }
+  };
+
+  const generateScript = async (contentIdea: ContentIdea) => {
+    setIsGeneratingScript(true);
+    
+    try {
+      const response = await fetch('/api/generate-script', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contentIdea: `${contentIdea.title}: ${contentIdea.description}`,
+          hashtag: selectedHashtag,
+          userPassion
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Navigate to script generator page with the generated script
+        const scriptData = encodeURIComponent(JSON.stringify({
+          script: data.script,
+          contentIdea: `${contentIdea.title}: ${contentIdea.description}`,
+          hashtag: selectedHashtag,
+          userPassion
+        }));
+        
+        router.push(`/script?data=${scriptData}`);
+      } else {
+        console.error('Failed to generate script');
+        // Fallback: navigate to script generator with just the content idea
+        const scriptData = encodeURIComponent(JSON.stringify({
+          script: '',
+          contentIdea: `${contentIdea.title}: ${contentIdea.description}`,
+          hashtag: selectedHashtag,
+          userPassion
+        }));
+        
+        router.push(`/script?data=${scriptData}`);
+      }
+    } catch (error) {
+      console.error('Error generating script:', error);
+      // Fallback: navigate to script generator with just the content idea
+      const scriptData = encodeURIComponent(JSON.stringify({
+        script: '',
+        contentIdea: `${contentIdea.title}: ${contentIdea.description}`,
+        hashtag: selectedHashtag,
+        userPassion
+      }));
+      
+      router.push(`/script?data=${scriptData}`);
+    } finally {
+      setIsGeneratingScript(false);
     }
   };
 
@@ -439,7 +496,24 @@ export default function DiscoverHashtags() {
                         </span>
                       </div>
                     </div>
-                    <p className="text-gray-300 text-sm">{idea.description}</p>
+                    <p className="text-gray-300 text-sm mb-4">{idea.description}</p>
+                    
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => generateScript(idea)}
+                        disabled={isGeneratingScript}
+                        className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white py-2 px-4 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-300 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isGeneratingScript ? '🤖 Generating Script...' : '📝 Generate Script'}
+                      </button>
+                      
+                      <Link
+                        href={`/script?idea=${encodeURIComponent(`${idea.title}: ${idea.description}`)}&hashtag=${encodeURIComponent(selectedHashtag || '')}&passion=${encodeURIComponent(userPassion || '')}`}
+                        className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 px-4 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 font-medium text-center"
+                      >
+                        ✏️ Write Script
+                      </Link>
+                    </div>
                   </div>
                 ))}
               </div>

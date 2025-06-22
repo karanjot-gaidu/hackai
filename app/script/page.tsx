@@ -2,96 +2,107 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useRouter } from 'next/navigation';
-import Navbar from '../components/Navbar';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import Button from '../components/Button';
+import MDEditor from '@uiw/react-md-editor';
 
 export default function ScriptPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [script, setScript] = useState('');
+  const [contentIdea, setContentIdea] = useState('');
+  const [hashtag, setHashtag] = useState('');
+  const [userPassion, setUserPassion] = useState('');
   const [tone, setTone] = useState('educational');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-
-  const sampleScripts = {
-    educational: `Hey everyone! 👋 Today we're diving into something that's been a game-changer for me - [Your Topic].
-
-Let me break this down into 3 simple steps that anyone can follow:
-
-Step 1: [First step with explanation]
-This is crucial because [reason why it matters]
-
-Step 2: [Second step with explanation] 
-Here's a pro tip: [helpful insight]
-
-Step 3: [Third step with explanation]
-This is where most people mess up, so pay attention!
-
-The key takeaway? [Main lesson or insight]
-
-If you found this helpful, drop a like and follow for more tips like this! What topic should I cover next? Comment below! 👇
-
-#YourNiche #Tips #Education #ContentCreator`,
-    
-    funny: `Okay, so picture this... 😂 You're trying to [common problem], and it's going about as well as my attempt to cook without burning the kitchen down! 🔥
-
-But guess what? I discovered this absolutely ridiculous hack that actually works! 
-
-Here's the deal: [funny explanation of the solution]
-
-*Insert dramatic pause* 
-
-And that's when I realized... [funny revelation]
-
-Pro tip: [humorous advice]
-
-The best part? [funny benefit]
-
-So next time you're [situation], remember this! Unless you want to end up like me - learning everything the hard way! 😅
-
-Like and follow if you're also a professional disaster like me! 🤪
-
-#Funny #LifeHacks #Relatable #ContentCreator`,
-    
-    motivational: `Listen up, because this changed everything for me... 💪
-
-I used to think [limiting belief], until I discovered this powerful truth: [motivational insight]
-
-Here's what I learned:
-
-🔥 [First powerful lesson]
-This hit me like a ton of bricks when I realized...
-
-🔥 [Second powerful lesson] 
-The moment I understood this, everything shifted...
-
-🔥 [Third powerful lesson]
-This is what separates the dreamers from the doers...
-
-The truth is, [motivational truth]
-
-You have the power to [empowering statement]. Right now. Today.
-
-Don't wait for the perfect moment. Create it.
-
-If this resonates with you, drop a ❤️ and let's build this community of go-getters together!
-
-Remember: [motivational quote or phrase]
-
-#Motivation #Mindset #Success #Inspiration`
-  };
+  const [isGeneratingFromIdea, setIsGeneratingFromIdea] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
-    generateScript();
-  }, [tone]);
+    // Handle incoming data from discover hashtags page
+    const dataParam = searchParams.get('data');
+    if (dataParam) {
+      try {
+        const data = JSON.parse(decodeURIComponent(dataParam));
+        setScript(data.script || '');
+        setContentIdea(data.contentIdea || '');
+        setHashtag(data.hashtag || '');
+        setUserPassion(data.userPassion || '');
+      } catch (error) {
+        console.error('Error parsing data parameter:', error);
+      }
+    } else {
+      // Handle individual URL parameters
+      const ideaParam = searchParams.get('idea');
+      const hashtagParam = searchParams.get('hashtag');
+      const passionParam = searchParams.get('passion');
+      
+      if (ideaParam) setContentIdea(decodeURIComponent(ideaParam));
+      if (hashtagParam) setHashtag(decodeURIComponent(hashtagParam));
+      if (passionParam) setUserPassion(decodeURIComponent(passionParam));
+    }
+  }, [searchParams]);
 
-  const generateScript = () => {
+  const generateScript = async () => {
     setIsGenerating(true);
-    // Simulate API call
-    setTimeout(() => {
-      setScript(sampleScripts[tone as keyof typeof sampleScripts]);
+    
+    try {
+      const response = await fetch('/api/generate-script', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contentIdea: contentIdea || 'Create an engaging TikTok script',
+          hashtag: hashtag,
+          userPassion: userPassion,
+          tone: tone
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setScript(data.script);
+      } else {
+        console.error('Failed to generate script');
+        setScript('Failed to generate script. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error generating script:', error);
+      setScript('Error generating script. Please try again.');
+    } finally {
       setIsGenerating(false);
-    }, 2000);
+    }
+  };
+
+  const generateScriptFromIdea = async () => {
+    if (!contentIdea.trim()) return;
+    
+    setIsGeneratingFromIdea(true);
+    
+    try {
+      const response = await fetch('/api/generate-script', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contentIdea: contentIdea,
+          hashtag: hashtag,
+          userPassion: userPassion,
+          tone: tone
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setScript(data.script);
+      } else {
+        console.error('Failed to generate script from idea');
+      }
+    } catch (error) {
+      console.error('Error generating script from idea:', error);
+    } finally {
+      setIsGeneratingFromIdea(false);
+    }
   };
 
   const handleContinue = () => {
@@ -100,14 +111,42 @@ Remember: [motivational quote or phrase]
     router.push('/plan');
   };
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(script);
-    // You could add a toast notification here
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(script);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = script;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1A1A1A] via-[#2A2A2A] to-[#1A1A1A]">
-      <Navbar currentStep={3} totalSteps={5} />
+      {/* Header with Back Button */}
+      <header className="bg-gradient-to-r from-gray-900/80 to-gray-800/80 backdrop-blur-md border-b border-gray-700/50">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Link href="/dashboard" className="text-gray-400 hover:text-white transition-colors">
+                ← Back to Dashboard
+              </Link>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
+                Script Generator
+              </h1>
+            </div>
+          </div>
+        </div>
+      </header>
       
       <div className="px-6 py-12">
         <div className="max-w-4xl mx-auto">
@@ -133,6 +172,56 @@ Remember: [motivational quote or phrase]
             transition={{ duration: 0.8, delay: 0.2 }}
             className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-8 rounded-2xl border border-gray-700/50 backdrop-blur-sm mb-8"
           >
+            {/* Content Idea Input */}
+            {(contentIdea || !script) && (
+              <div className="mb-6">
+                <label className="block text-lg font-semibold mb-3 text-gray-200">
+                  Your Content Idea 💡
+                </label>
+                <textarea
+                  value={contentIdea}
+                  onChange={(e) => setContentIdea(e.target.value)}
+                  placeholder="Describe your content idea, topic, or what you want to create a script about..."
+                  className="w-full p-4 bg-gray-700/50 border border-gray-600 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  rows={3}
+                />
+                
+                <div className="mt-3 flex space-x-2">
+                  {contentIdea ? (
+                    <Button
+                      onClick={generateScriptFromIdea}
+                      disabled={isGeneratingFromIdea || !contentIdea.trim()}
+                      variant="outline"
+                      size="sm"
+                    >
+                      {isGeneratingFromIdea ? '🤖 Generating...' : '📝 Generate Script from Idea'}
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={generateScript}
+                      disabled={isGenerating}
+                      variant="outline"
+                      size="sm"
+                    >
+                      {isGenerating ? '🤖 Generating...' : '🎲 Generate Random Script'}
+                    </Button>
+                  )}
+                  
+                  {hashtag && (
+                    <span className="px-3 py-2 bg-blue-500/20 text-blue-400 rounded-lg text-sm">
+                      #{hashtag}
+                    </span>
+                  )}
+                  
+                  {userPassion && (
+                    <span className="px-3 py-2 bg-purple-500/20 text-purple-400 rounded-lg text-sm">
+                      {userPassion}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Tone Selector */}
             <div className="mb-6">
               <label className="block text-lg font-semibold mb-3 text-gray-200">
@@ -147,6 +236,9 @@ Remember: [motivational quote or phrase]
                 <option value="funny">Funny & Entertaining</option>
                 <option value="motivational">Motivational & Inspirational</option>
               </select>
+              <p className="text-sm text-gray-400 mt-2">
+                Current tone: <span className="text-blue-400 capitalize">{tone}</span> - This will be used when generating new scripts
+              </p>
             </div>
 
             {/* Script Display */}
@@ -161,14 +253,15 @@ Remember: [motivational quote or phrase]
                     variant="outline"
                     size="sm"
                   >
-                    {isEditing ? 'Save' : 'Edit'}
+                    {isEditing ? 'Preview' : 'Edit'}
                   </Button>
                   <Button
                     onClick={copyToClipboard}
                     variant="outline"
                     size="sm"
+                    className={copySuccess ? 'bg-green-600 text-white' : ''}
                   >
-                    Copy
+                    {copySuccess ? '✓ Copied!' : 'Copy'}
                   </Button>
                 </div>
               </div>
@@ -184,16 +277,30 @@ Remember: [motivational quote or phrase]
                   </div>
                 </div>
               ) : (
-                <textarea
-                  value={script}
-                  onChange={(e) => setScript(e.target.value)}
-                  disabled={!isEditing}
-                  className={`w-full p-6 bg-gray-700/50 border border-gray-600 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none ${
-                    isEditing ? '' : 'cursor-default'
-                  }`}
-                  rows={15}
-                  placeholder="Your AI-generated script will appear here..."
-                />
+                <div className="border border-gray-600 rounded-2xl overflow-hidden">
+                  {isEditing ? (
+                    <MDEditor
+                      value={script}
+                      onChange={(val) => setScript(val || '')}
+                      preview="edit"
+                      height={400}
+                      className="bg-gray-700/50"
+                      data-color-mode="dark"
+                    />
+                  ) : (
+                    <div className="bg-gray-700/50 p-6 min-h-[400px]">
+                      <MDEditor.Markdown 
+                        source={script} 
+                        style={{ 
+                          backgroundColor: 'transparent',
+                          color: 'white',
+                          fontSize: '16px',
+                          lineHeight: '1.6'
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 
