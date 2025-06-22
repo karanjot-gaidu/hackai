@@ -104,7 +104,7 @@ body {
   left: 100%;
 }
 
-/* Markdown Editor Dark Theme */
+/* Markdown Editor Dark Theme - More Aggressive Rules */
 .w-md-editor {
   background-color: #374151 !important;
   border: 1px solid #4B5563 !important;
@@ -140,6 +140,29 @@ body {
 .w-md-editor-text-pre {
   background-color: #374151 !important;
   color: #F9FAFB !important;
+}
+
+.w-md-editor-text-pre > code {
+  background-color: #374151 !important;
+  color: #F9FAFB !important;
+}
+
+.w-md-editor-text-pre > code > span {
+  color: #F9FAFB !important;
+}
+
+.w-md-editor-text-input > textarea {
+  background-color: #374151 !important;
+  color: #F9FAFB !important;
+}
+
+.w-md-editor-text-input > textarea::placeholder {
+  color: #9CA3AF !important;
+}
+
+.w-md-editor-text-input > textarea:focus {
+  outline: none !important;
+  border: none !important;
 }
 
 .w-md-editor-preview {
@@ -190,4 +213,98 @@ body {
 
 .w-md-editor-preview em {
   color: #D1D5DB !important;
+}
+
+/* Additional fixes for text visibility */
+.w-md-editor-text-input textarea {
+  color: #F9FAFB !important;
+  background-color: #374151 !important;
+}
+
+.w-md-editor-text-input textarea::placeholder {
+  color: #9CA3AF !important;
+}
+
+.w-md-editor-text-input textarea:focus {
+  color: #F9FAFB !important;
+  background-color: #374151 !important;
+}
+
+/* Fix for any remaining text visibility issues */
+.w-md-editor * {
+  color: inherit !important;
+}
+
+.w-md-editor-text-input * {
+  color: #F9FAFB !important;
+}
+
+/* Specific fixes for textarea text visibility */
+.w-md-editor-text-input textarea,
+.w-md-editor-text-input textarea:focus,
+.w-md-editor-text-input textarea:hover {
+  color: #F9FAFB !important;
+  background-color: #374151 !important;
+  caret-color: #F9FAFB !important;
+}
+
+/* Ensure all text elements in the editor are visible */
+.w-md-editor-text-input,
+.w-md-editor-text-input *,
+.w-md-editor-text-input textarea,
+.w-md-editor-text-input textarea * {
+  color: #F9FAFB !important;
+}
+
+/* Fix for syntax highlighting */
+.w-md-editor-text-pre .token {
+  color: #F9FAFB !important;
+}
+
+.w-md-editor-text-pre .token.comment {
+  color: #9CA3AF !important;
+}
+
+.w-md-editor-text-pre .token.keyword {
+  color: #60A5FA !important;
+}
+
+.w-md-editor-text-pre .token.string {
+  color: #34D399 !important;
+}
+
+/* More aggressive text color overrides */
+.w-md-editor-text-input textarea,
+.w-md-editor-text-input textarea *,
+.w-md-editor-text-input textarea::placeholder,
+.w-md-editor-text-input textarea:focus,
+.w-md-editor-text-input textarea:focus *,
+.w-md-editor-text-input textarea:hover,
+.w-md-editor-text-input textarea:hover * {
+  color: #F9FAFB !important;
+  background-color: #374151 !important;
+}
+
+/* Force text color on all elements within the editor */
+.w-md-editor-text-input textarea,
+.w-md-editor-text-input textarea *,
+.w-md-editor-text-input textarea::before,
+.w-md-editor-text-input textarea::after {
+  color: #F9FAFB !important;
+}
+
+/* Override any inline styles */
+.w-md-editor-text-input textarea[style*="color"] {
+  color: #F9FAFB !important;
+}
+
+/* Ensure the textarea itself has proper styling */
+.w-md-editor-text-input textarea {
+  color: #F9FAFB !important;
+  background-color: #374151 !important;
+  border: none !important;
+  outline: none !important;
+  font-family: inherit !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
 }

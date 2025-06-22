@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useUser } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 interface TrendingHashtag {
@@ -21,8 +20,8 @@ interface ImageGeneration {
 }
 
 export default function ThumbnailGenerator() {
-  const { user, isLoaded } = useUser();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
@@ -31,27 +30,56 @@ export default function ThumbnailGenerator() {
   const [imageHistory, setImageHistory] = useState<ImageGeneration[]>([]);
   const [trendingHashtags, setTrendingHashtags] = useState<TrendingHashtag[]>([]);
   const [selectedHashtag, setSelectedHashtag] = useState<string>('');
+  const [showEnhancedPrompt, setShowEnhancedPrompt] = useState(false);
+  const [generationMode, setGenerationMode] = useState<'enhance' | 'direct'>('enhance');
+  const [copySuccess, setCopySuccess] = useState(false);
+  const [isAutoFilled, setIsAutoFilled] = useState(false);
 
   // Mock trending hashtags - replace with actual API call if available
-  const mockTrendingHashtags: TrendingHashtag[] = [
-    { hashtag: '#TikTokTrends', views: '2.1B', category: 'Entertainment' },
-    { hashtag: '#ViralDance', views: '1.8B', category: 'Dance' },
-    { hashtag: '#LifeHacks', views: '1.5B', category: 'Education' },
-    { hashtag: '#FoodTok', views: '1.2B', category: 'Food' },
-    { hashtag: '#FashionTrends', views: '900M', category: 'Fashion' },
-    { hashtag: '#FitnessMotivation', views: '800M', category: 'Fitness' },
-    { hashtag: '#ComedySkits', views: '750M', category: 'Comedy' },
-    { hashtag: '#BeautyTips', views: '600M', category: 'Beauty' },
-  ];
+  useEffect(() => {
+    setTrendingHashtags([
+      { hashtag: 'fitness', views: '1.2M', category: 'Fitness' },
+      { hashtag: 'cooking', views: '890K', category: 'Food' },
+      { hashtag: 'travel', views: '2.1M', category: 'Travel' },
+      { hashtag: 'tech', views: '450K', category: 'Technology' },
+      { hashtag: 'fashion', views: '1.8M', category: 'Fashion' },
+      { hashtag: 'education', views: '320K', category: 'Education' },
+    ]);
+  }, []);
+
+  // Handle incoming data from script page
+  useEffect(() => {
+    console.log('Thumbnail generator useEffect triggered');
+    console.log('All search params:', Object.fromEntries(searchParams.entries()));
+    
+    const promptParam = searchParams.get('prompt');
+    console.log('Thumbnail generator received prompt param:', promptParam);
+    
+    if (promptParam) {
+      try {
+        const decodedPrompt = decodeURIComponent(promptParam);
+        console.log('Decoded prompt:', decodedPrompt);
+        console.log('Decoded prompt length:', decodedPrompt.length);
+        
+        if (decodedPrompt) {
+          console.log('Setting prompt to:', decodedPrompt);
+          setPrompt(decodedPrompt);
+          setShowEnhancedPrompt(true);
+          setIsAutoFilled(true);
+          console.log('Prompt set successfully, isAutoFilled:', true);
+        }
+      } catch (error) {
+        console.error('Error decoding prompt parameter:', error);
+      }
+    } else {
+      console.log('No prompt parameter found in URL');
+      console.log('Current URL:', window.location.href);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
-    if (!isLoaded || !user) {
-      router.push('/sign-in');
-      return;
-    }
-    setTrendingHashtags(mockTrendingHashtags);
     loadImageHistory();
-  }, [isLoaded, user, router]);
+  }, []);
 
   const loadImageHistory = async () => {
     try {
@@ -138,21 +166,56 @@ export default function ThumbnailGenerator() {
     }
   };
 
+  const generateImageDirectly = async () => {
+    if (!prompt.trim()) return;
+    
+    setIsGeneratingImage(true);
+    try {
+      console.log('Sending request to generate image directly with prompt:', prompt);
+      
+      const response = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: prompt
+        }),
+      });
+      
+      console.log('Response status:', response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Response data:', data);
+        
+        if (data.success && data.imageUrl) {
+          setGeneratedImage(data.imageUrl);
+          console.log('Image URL set:', data.imageUrl);
+          
+          if (data.fallback) {
+            console.log('Using fallback base64 image');
+          }
+          
+          loadImageHistory();
+        } else {
+          console.error('Response missing imageUrl:', data);
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Failed to generate image:', errorData);
+      }
+    } catch (error) {
+      console.error('Error generating image:', error);
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
   const addHashtagToPrompt = (hashtag: string) => {
     setSelectedHashtag(hashtag);
     setPrompt(prev => prev ? `${prev} ${hashtag}` : hashtag);
   };
-
-  if (!isLoaded || !user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#1A1A1A] via-[#2A2A2A] to-[#1A1A1A] flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1A1A1A] via-[#2A2A2A] to-[#1A1A1A]">
@@ -219,13 +282,29 @@ export default function ThumbnailGenerator() {
               <h3 className="text-xl font-bold text-white mb-4">💬 Generate Thumbnail Ideas</h3>
               
               <div className="space-y-4">
+                {isAutoFilled && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-3 bg-gradient-to-r from-green-900/30 to-emerald-900/30 border border-green-700/50 rounded-xl"
+                  >
+                    <div className="flex items-center text-green-400 text-sm">
+                      <span className="mr-2">✅</span>
+                      Prompt auto-filled from your script generation
+                    </div>
+                  </motion.div>
+                )}
+                
                 <div>
                   <label className="block text-gray-300 text-sm font-medium mb-2">
                     Describe your content or thumbnail idea
                   </label>
                   <textarea
                     value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
+                    onChange={(e) => {
+                      setPrompt(e.target.value);
+                      if (isAutoFilled) setIsAutoFilled(false);
+                    }}
                     placeholder="e.g., A cooking tutorial for making pasta, A fitness challenge video, A comedy skit about dating..."
                     className="w-full p-4 bg-gray-900/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none transition-colors"
                     rows={4}
@@ -247,13 +326,29 @@ export default function ThumbnailGenerator() {
                   </div>
                 )}
 
-                <button
-                  onClick={generateThumbnailIdeas}
-                  disabled={isGenerating || !prompt.trim()}
-                  className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-6 rounded-xl font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isGenerating ? 'Enhancing Prompt...' : 'Enhance Prompt'}
-                </button>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={generateImageDirectly}
+                    disabled={isGeneratingImage || !prompt.trim()}
+                    className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 px-6 rounded-xl font-medium hover:from-green-600 hover:to-emerald-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isGeneratingImage ? '🎨 Generating...' : '🎨 Generate Directly'}
+                  </button>
+                  
+                  <button
+                    onClick={generateThumbnailIdeas}
+                    disabled={isGenerating || !prompt.trim()}
+                    className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-6 rounded-xl font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isGenerating ? '🤖 Enhancing...' : '🤖 Enhance with AI'}
+                  </button>
+                </div>
+                
+                <div className="text-xs text-gray-500 text-center">
+                  <span className="text-green-400">🎨 Generate Directly:</span> Uses your prompt as-is for faster results
+                  <br />
+                  <span className="text-blue-400">🤖 Enhance with AI:</span> AI improves your prompt for better quality (recommended)
+                </div>
               </div>
 
               {/* Enhanced Prompt Display - Editable */}
@@ -261,9 +356,15 @@ export default function ThumbnailGenerator() {
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
-                  className="mt-6"
+                  className="mt-6 p-4 bg-gradient-to-r from-blue-900/20 to-purple-900/20 rounded-xl border border-blue-700/30"
                 >
-                  <h4 className="text-white font-medium mb-2">Enhanced Prompt (Editable):</h4>
+                  <h4 className="text-white font-medium mb-2 flex items-center">
+                    <span className="text-blue-400 mr-2">🤖</span>
+                    AI-Enhanced Prompt (Optional)
+                  </h4>
+                  <p className="text-gray-400 text-sm mb-3">
+                    The AI has enhanced your prompt for better results. You can edit it or use it as is.
+                  </p>
                   <textarea
                     value={enhancedPrompt}
                     onChange={(e) => setEnhancedPrompt(e.target.value)}
@@ -277,7 +378,7 @@ export default function ThumbnailGenerator() {
                     disabled={isGeneratingImage || !enhancedPrompt.trim()}
                     className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 px-6 rounded-xl font-medium hover:from-green-600 hover:to-emerald-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isGeneratingImage ? 'Generating Image...' : 'Generate Image'}
+                    {isGeneratingImage ? '🎨 Generating from Enhanced Prompt...' : '🎨 Generate from Enhanced Prompt'}
                   </button>
                 </motion.div>
               )}

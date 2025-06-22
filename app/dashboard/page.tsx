@@ -139,7 +139,7 @@ export default function Dashboard() {
       description: 'Create engaging scripts with AI',
       icon: '📝',
       color: 'from-purple-500 to-pink-600',
-      href: '/tools/script-generator'
+      href: '/script'
     },
     {
       id: 'content-planner',

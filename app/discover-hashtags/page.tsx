@@ -151,9 +151,10 @@ export default function DiscoverHashtags() {
       if (response.ok) {
         const data = await response.json();
         
-        // Navigate to script generator page with the generated script
+        // Navigate to script generator page with the generated script and thumbnail prompt
         const scriptData = encodeURIComponent(JSON.stringify({
           script: data.script,
+          prompt: data.prompt,
           contentIdea: `${contentIdea.title}: ${contentIdea.description}`,
           hashtag: selectedHashtag,
           userPassion
@@ -165,6 +166,7 @@ export default function DiscoverHashtags() {
         // Fallback: navigate to script generator with just the content idea
         const scriptData = encodeURIComponent(JSON.stringify({
           script: '',
+          prompt: '',
           contentIdea: `${contentIdea.title}: ${contentIdea.description}`,
           hashtag: selectedHashtag,
           userPassion
@@ -177,6 +179,7 @@ export default function DiscoverHashtags() {
       // Fallback: navigate to script generator with just the content idea
       const scriptData = encodeURIComponent(JSON.stringify({
         script: '',
+        prompt: '',
         contentIdea: `${contentIdea.title}: ${contentIdea.description}`,
         hashtag: selectedHashtag,
         userPassion

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -11,6 +11,7 @@ export default function ScriptPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [script, setScript] = useState('');
+  const [thumbnailPrompt, setThumbnailPrompt] = useState('');
   const [contentIdea, setContentIdea] = useState('');
   const [hashtag, setHashtag] = useState('');
   const [userPassion, setUserPassion] = useState('');
@@ -19,19 +20,27 @@ export default function ScriptPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isGeneratingFromIdea, setIsGeneratingFromIdea] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const hasProcessedIncomingData = useRef(false);
 
   useEffect(() => {
+    // Only process incoming data once
+    if (hasProcessedIncomingData.current) return;
+    
     // Handle incoming data from discover hashtags page
     const dataParam = searchParams.get('data');
     if (dataParam) {
       try {
         const data = JSON.parse(decodeURIComponent(dataParam));
         setScript(data.script || '');
+        setThumbnailPrompt(data.prompt || '');
+        console.log('Thumbnail prompt:', data.prompt);
         setContentIdea(data.contentIdea || '');
         setHashtag(data.hashtag || '');
         setUserPassion(data.userPassion || '');
+        hasProcessedIncomingData.current = true;
       } catch (error) {
         console.error('Error parsing data parameter:', error);
+        hasProcessedIncomingData.current = true;
       }
     } else {
       // Handle individual URL parameters
@@ -42,8 +51,14 @@ export default function ScriptPage() {
       if (ideaParam) setContentIdea(decodeURIComponent(ideaParam));
       if (hashtagParam) setHashtag(decodeURIComponent(hashtagParam));
       if (passionParam) setUserPassion(decodeURIComponent(passionParam));
+      hasProcessedIncomingData.current = true;
     }
   }, [searchParams]);
+
+  // Debug useEffect to monitor thumbnailPrompt changes
+  useEffect(() => {
+    console.log('thumbnailPrompt state changed to:', thumbnailPrompt);
+  }, [thumbnailPrompt]);
 
   const generateScript = async () => {
     setIsGenerating(true);
@@ -62,14 +77,23 @@ export default function ScriptPage() {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Script generation response:', data);
+        console.log('Response keys:', Object.keys(data));
+        console.log('Script length:', data.script?.length);
+        console.log('Prompt length:', data.prompt?.length);
+        console.log('Prompt value:', data.prompt);
         setScript(data.script);
+        setThumbnailPrompt(data.prompt);
+        console.log('Set thumbnail prompt to:', data.prompt);
       } else {
         console.error('Failed to generate script');
         setScript('Failed to generate script. Please try again.');
+        setThumbnailPrompt('');
       }
     } catch (error) {
       console.error('Error generating script:', error);
       setScript('Error generating script. Please try again.');
+      setThumbnailPrompt('');
     } finally {
       setIsGenerating(false);
     }
@@ -94,7 +118,14 @@ export default function ScriptPage() {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Script generation from idea response:', data);
+        console.log('Response keys:', Object.keys(data));
+        console.log('Script length:', data.script?.length);
+        console.log('Prompt length:', data.prompt?.length);
+        console.log('Prompt value:', data.prompt);
         setScript(data.script);
+        setThumbnailPrompt(data.prompt);
+        console.log('Set thumbnail prompt to:', data.prompt);
       } else {
         console.error('Failed to generate script from idea');
       }
@@ -108,7 +139,27 @@ export default function ScriptPage() {
   const handleContinue = () => {
     localStorage.setItem('generatedScript', script);
     localStorage.setItem('scriptTone', tone);
-    router.push('/plan');
+    
+    console.log('handleContinue called');
+    console.log('Current thumbnailPrompt state:', thumbnailPrompt);
+    console.log('Current script state:', script);
+    
+    // Navigate to thumbnail generator with the generated prompt
+    if (thumbnailPrompt) {
+      console.log('Passing prompt to thumbnail generator:', thumbnailPrompt);
+      // Pass the prompt directly as a URL parameter
+      const encodedPrompt = encodeURIComponent(thumbnailPrompt);
+      console.log('Encoded prompt:', encodedPrompt);
+      const url = `/thumbnail-generator?prompt=${encodedPrompt}`;
+      console.log('Navigating to:', url);
+      
+      // Use window.location.href to ensure search params are passed correctly
+      window.location.href = url;
+    } else {
+      console.log('No thumbnail prompt available, navigating without prompt');
+      // Fallback to thumbnail generator without prompt
+      window.location.href = '/thumbnail-generator';
+    }
   };
 
   const copyToClipboard = async () => {
@@ -279,14 +330,21 @@ export default function ScriptPage() {
               ) : (
                 <div className="border border-gray-600 rounded-2xl overflow-hidden">
                   {isEditing ? (
-                    <MDEditor
-                      value={script}
-                      onChange={(val) => setScript(val || '')}
-                      preview="edit"
-                      height={400}
-                      className="bg-gray-700/50"
-                      data-color-mode="dark"
-                    />
+                    <div className="bg-gray-700/50">
+                      <textarea
+                        value={script}
+                        onChange={(e) => setScript(e.target.value)}
+                        className="w-full p-6 bg-gray-700/50 border-none text-white placeholder-gray-400 focus:outline-none focus:ring-0 resize-none"
+                        style={{
+                          height: '400px',
+                          fontSize: '16px',
+                          lineHeight: '1.6',
+                          color: '#F9FAFB',
+                          backgroundColor: '#374151'
+                        }}
+                        placeholder="Write your script here... You can use markdown formatting like **bold**, *italic*, # headers, etc."
+                      />
+                    </div>
                   ) : (
                     <div className="bg-gray-700/50 p-6 min-h-[400px]">
                       <MDEditor.Markdown 
@@ -303,6 +361,26 @@ export default function ScriptPage() {
                 </div>
               )}
             </div>
+
+            {/* Thumbnail Prompt Display */}
+            {thumbnailPrompt && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="mb-6 p-4 bg-gradient-to-r from-green-900/20 to-emerald-900/20 rounded-xl border border-green-700/30"
+              >
+                <h4 className="text-white font-medium mb-2 flex items-center">
+                  <span className="text-green-400 mr-2">🎨</span>
+                  Generated Thumbnail Prompt
+                </h4>
+                <p className="text-gray-400 text-sm mb-3">
+                  AI has created a thumbnail prompt based on your script. This will be used to generate your thumbnail.
+                </p>
+                <div className="bg-gray-900/30 p-4 rounded-xl border border-gray-700">
+                  <p className="text-green-100 text-sm whitespace-pre-line">{thumbnailPrompt}</p>
+                </div>
+              </motion.div>
+            )}
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -335,7 +413,7 @@ export default function ScriptPage() {
                 disabled={!script.trim()}
                 size="lg"
               >
-                Continue to Planning
+                Start Creating Thumbnail
                 <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
